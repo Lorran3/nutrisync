@@ -1,8 +1,9 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
+import base64
 from pathlib import Path
 
 st.set_page_config(
@@ -13,7 +14,12 @@ st.set_page_config(
 )
 
 DATA_FILE = Path("nutrisync_data.json")
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
+# =========================
+# ESTILO PREMIUM
+# =========================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -46,19 +52,9 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 [data-testid="stSidebar"] > div:first-child { padding-top: 26px; }
 
-.side-logo {
-    color: white;
-    font-size: 31px;
-    font-weight: 900;
-    letter-spacing: -.9px;
-    margin-bottom: 3px;
-}
+.side-logo { color: white; font-size: 31px; font-weight: 900; letter-spacing: -.9px; margin-bottom: 3px; }
 .side-logo span { color: #86efac; }
-.side-sub {
-    color: #b7e8ca;
-    font-size: 13px;
-    margin-bottom: 22px;
-}
+.side-sub { color: #b7e8ca; font-size: 13px; margin-bottom: 22px; }
 
 .nav-btn button {
     width: 100%;
@@ -73,10 +69,7 @@ header[data-testid="stHeader"] { background: transparent; }
     font-weight: 750 !important;
     box-shadow: none !important;
 }
-.nav-btn button:hover {
-    background: rgba(134,239,172,.17) !important;
-    color: white !important;
-}
+.nav-btn button:hover { background: rgba(134,239,172,.17) !important; color: white !important; }
 .nav-active {
     background: linear-gradient(135deg, #1f8f5f, #176f49);
     color: white;
@@ -87,7 +80,6 @@ header[data-testid="stHeader"] { background: transparent; }
     box-shadow: 0 12px 24px rgba(31,143,95,.25);
 }
 
-/* campos com contraste */
 input, textarea, select,
 [data-baseweb="input"],
 [data-baseweb="textarea"],
@@ -107,14 +99,12 @@ input, textarea, select,
     background-color: #ffffff !important;
 }
 [data-baseweb="popover"], [data-baseweb="menu"] { background-color: #ffffff !important; }
-
 label, .stTextInput label, .stNumberInput label, .stSelectbox label,
 .stTextArea label, .stMultiSelect label, .stSlider label {
     color: #263d32 !important;
     font-weight: 800 !important;
 }
 
-/* hero */
 .hero {
     background: linear-gradient(135deg, #12372a 0%, #1f8f5f 100%);
     color: white;
@@ -135,18 +125,8 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label,
     top: -95px;
     background: rgba(255,255,255,.10);
 }
-.hero h1 {
-    color: white;
-    margin: 0;
-    font-size: 35px;
-    font-weight: 900;
-    letter-spacing: -1px;
-}
-.hero p {
-    color: rgba(255,255,255,.84);
-    font-weight: 600;
-    max-width: 780px;
-}
+.hero h1 { color: white; margin: 0; font-size: 35px; font-weight: 900; letter-spacing: -1px; }
+.hero p { color: rgba(255,255,255,.84); font-weight: 600; max-width: 780px; }
 
 .card {
     background: rgba(255,255,255,.96);
@@ -155,37 +135,12 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label,
     padding: 22px;
     box-shadow: 0 16px 40px rgba(18,55,42,.075);
 }
-.card-title {
-    color: #12372a;
-    font-size: 20px;
-    font-weight: 900;
-    margin-bottom: 6px;
-}
-.muted {
-    color: #6f7d75;
-    font-size: 14px;
-    font-weight: 600;
-}
-.kpi-label {
-    color: #6f7d75;
-    font-size: 12px;
-    font-weight: 850;
-    text-transform: uppercase;
-    letter-spacing: .45px;
-}
-.kpi-value {
-    color: #12372a;
-    font-size: 32px;
-    font-weight: 900;
-    letter-spacing: -.8px;
-    margin-top: 7px;
-}
-.kpi-foot {
-    color: #1f8f5f;
-    font-size: 13px;
-    font-weight: 850;
-    margin-top: 8px;
-}
+.card-title { color: #12372a; font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+.muted { color: #6f7d75; font-size: 14px; font-weight: 600; }
+.kpi-label { color: #6f7d75; font-size: 12px; font-weight: 850; text-transform: uppercase; letter-spacing: .45px; }
+.kpi-value { color: #12372a; font-size: 32px; font-weight: 900; letter-spacing: -.8px; margin-top: 7px; }
+.kpi-foot { color: #1f8f5f; font-size: 13px; font-weight: 850; margin-top: 8px; }
+
 .meal {
     background: white;
     border: 1px solid #dfe8e1;
@@ -194,25 +149,9 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label,
     margin: 12px 0;
     box-shadow: 0 10px 25px rgba(18,55,42,.05);
 }
-.meal-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: start;
-}
-.meal-title {
-    color: #12372a;
-    font-weight: 900;
-    font-size: 18px;
-}
-.meal-time {
-    background: #eaf7ef;
-    color: #176f49;
-    padding: 7px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 900;
-}
+.meal-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.meal-title { color: #12372a; font-weight: 900; font-size: 18px; }
+.meal-time { background: #eaf7ef; color: #176f49; padding: 7px 10px; border-radius: 999px; font-size: 12px; font-weight: 900; }
 .badge {
     display: inline-block;
     background: #eef8f2;
@@ -224,41 +163,17 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label,
     font-size: 12px;
     font-weight: 900;
 }
-.option-card {
-    background: #fbfdfb;
-    border: 1px solid #dfe8e1;
-    border-radius: 18px;
-    padding: 14px;
-    margin: 10px 0;
-}
+.option-card { background: #fbfdfb; border: 1px solid #dfe8e1; border-radius: 18px; padding: 14px; margin: 10px 0; }
 .option-name { font-weight: 900; color: #12372a; }
-.ok-box {
-    background: #eaf7ef;
-    color: #166534;
-    border: 1px solid #bce7cc;
-    border-radius: 17px;
-    padding: 14px 16px;
-    font-weight: 800;
-    margin: 9px 0;
-}
-.warn-box {
-    background: #fff7ed;
-    color: #9a3412;
-    border: 1px solid #fed7aa;
-    border-radius: 17px;
-    padding: 14px 16px;
-    font-weight: 800;
-    margin: 9px 0;
-}
-.danger-box {
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-    border-radius: 17px;
-    padding: 14px 16px;
-    font-weight: 800;
-    margin: 9px 0;
-}
+.ok-box { background: #eaf7ef; color: #166534; border: 1px solid #bce7cc; border-radius: 17px; padding: 14px 16px; font-weight: 800; margin: 9px 0; }
+.warn-box { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; border-radius: 17px; padding: 14px 16px; font-weight: 800; margin: 9px 0; }
+.danger-box { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 17px; padding: 14px 16px; font-weight: 800; margin: 9px 0; }
+
+.chat-box { background: white; border: 1px solid #dfe8e1; border-radius: 22px; padding: 18px; max-height: 450px; overflow-y: auto; }
+.chat-msg { padding: 12px 14px; border-radius: 16px; margin: 10px 0; max-width: 82%; }
+.chat-patient { background: #eaf7ef; margin-left: auto; color: #12372a; }
+.chat-nutri { background: #f3f4f6; color: #12372a; }
+
 .stButton > button {
     border-radius: 14px !important;
     border: none !important;
@@ -268,10 +183,7 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label,
     padding: 12px 18px !important;
     box-shadow: 0 10px 22px rgba(31,143,95,.18) !important;
 }
-.stButton > button:hover {
-    background: #176f49 !important;
-    color: white !important;
-}
+.stButton > button:hover { background: #176f49 !important; color: white !important; }
 .stProgress > div > div > div > div { background-color: #1f8f5f !important; }
 
 @media(max-width: 800px) {
@@ -281,6 +193,9 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label,
 </style>
 """, unsafe_allow_html=True)
 
+# =========================
+# DEFAULTS
+# =========================
 DEFAULT_FOODS = [
     {"nome": "Pão francês", "grupo": "Carboidrato", "porcao": "1 unidade", "cal": 135, "prot": 4, "carb": 28, "fat": 1},
     {"nome": "Pão integral", "grupo": "Carboidrato", "porcao": "2 fatias", "cal": 130, "prot": 6, "carb": 24, "fat": 2},
@@ -319,6 +234,9 @@ DEFAULT_PLAN = {
     "Jantar": {"hora": "20:00", "orientacao": "Refeição leve com proteína, vegetais e carboidrato se necessário.", "opcoes": ["Frango grelhado", "Carne magra", "Peixe", "Batata doce", "Salada", "Legumes"]},
 }
 
+# =========================
+# DATA
+# =========================
 def load_data():
     if DATA_FILE.exists():
         try:
@@ -342,6 +260,10 @@ def init():
         "water_by_patient": data.get("water_by_patient", {}),
         "profile_by_patient": data.get("profile_by_patient", {}),
         "history_by_patient": data.get("history_by_patient", {}),
+        "chat_by_patient": data.get("chat_by_patient", {}),
+        "photos_by_patient": data.get("photos_by_patient", {}),
+        "checkins_by_patient": data.get("checkins_by_patient", {}),
+        "notification_settings": data.get("notification_settings", {"water": True, "meal": True}),
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -359,16 +281,15 @@ def save_data():
         "water_by_patient": st.session_state.water_by_patient,
         "profile_by_patient": st.session_state.profile_by_patient,
         "history_by_patient": st.session_state.history_by_patient,
+        "chat_by_patient": st.session_state.chat_by_patient,
+        "photos_by_patient": st.session_state.photos_by_patient,
+        "checkins_by_patient": st.session_state.checkins_by_patient,
+        "notification_settings": st.session_state.notification_settings,
     }
     DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 def patient_names():
     return [p["Paciente"] for p in st.session_state.patients]
-
-def current_patient():
-    if st.session_state.role == "Paciente":
-        return st.session_state.nome if st.session_state.nome in patient_names() else st.session_state.selected_patient
-    return st.session_state.selected_patient
 
 def ensure_patient(name):
     st.session_state.plans.setdefault(name, DEFAULT_PLAN.copy())
@@ -376,10 +297,21 @@ def ensure_patient(name):
     st.session_state.water_by_patient.setdefault(name, [])
     st.session_state.profile_by_patient.setdefault(name, {"peso": 80.0, "altura": 180, "idade": 25, "sexo": "Masculino", "atividade": "Moderado", "objetivo": "Emagrecer"})
     st.session_state.history_by_patient.setdefault(name, [])
+    st.session_state.chat_by_patient.setdefault(name, [])
+    st.session_state.photos_by_patient.setdefault(name, [])
+    st.session_state.checkins_by_patient.setdefault(name, [])
 
 for p in patient_names():
     ensure_patient(p)
 
+def current_patient():
+    if st.session_state.role == "Paciente":
+        return st.session_state.nome if st.session_state.nome in patient_names() else st.session_state.selected_patient
+    return st.session_state.selected_patient
+
+# =========================
+# HELPERS
+# =========================
 def food_by_name(name):
     return next((f for f in st.session_state.foods if f["nome"] == name), None)
 
@@ -413,6 +345,23 @@ def targets(name):
 def pct(v, goal):
     return min(v / goal, 1.0) if goal else 0
 
+def streak(name):
+    checks = st.session_state.checkins_by_patient.get(name, [])
+    if not checks:
+        return 0
+    dates = sorted(set(checks), reverse=True)
+    today = date.today()
+    count = 0
+    for i in range(0, 365):
+        d = (today - timedelta(days=i)).isoformat()
+        if d in dates:
+            count += 1
+        else:
+            if i == 0:
+                continue
+            break
+    return count
+
 def hero(title, subtitle):
     st.markdown(f'<div class="hero"><h1>{title}</h1><p>{subtitle}</p></div>', unsafe_allow_html=True)
     st.write("")
@@ -436,7 +385,9 @@ def nav_button(label, page):
             st.rerun()
         st.sidebar.markdown("</div>", unsafe_allow_html=True)
 
-# Login
+# =========================
+# LOGIN
+# =========================
 if not st.session_state.logged:
     c1, c2 = st.columns([1.25, .75], gap="large")
     with c1:
@@ -444,16 +395,16 @@ if not st.session_state.logged:
         <div class="hero" style="min-height:540px;padding:42px;">
             <h1 style="font-size:48px;">NutriSync</h1>
             <p style="font-size:19px;max-width:760px;">
-                Plataforma para nutricionista criar dietas por paciente e o paciente registrar o que comeu no celular.
+                Dieta individual, registro com foto, água, chat, check-in diário, evolução e relatório semanal.
             </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px;">
                 <div style="background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:22px;">
                     <b style="font-size:18px;color:white;">Paciente</b><br>
-                    <span style="color:rgba(255,255,255,.82);">Seleciona os alimentos liberados, registra água e acompanha metas.</span>
+                    <span style="color:rgba(255,255,255,.82);">Registra refeições, água, fotos e conversa com o nutricionista.</span>
                 </div>
                 <div style="background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:22px;">
                     <b style="font-size:18px;color:white;">Nutricionista</b><br>
-                    <span style="color:rgba(255,255,255,.82);">Escolhe o paciente, monta a dieta e acompanha o consumo.</span>
+                    <span style="color:rgba(255,255,255,.82);">Monta dietas por paciente, acompanha evolução e gera relatório.</span>
                 </div>
             </div>
         </div>
@@ -476,15 +427,26 @@ if not st.session_state.logged:
             st.rerun()
     st.stop()
 
-# Sidebar
+# =========================
+# SIDEBAR
+# =========================
 st.sidebar.markdown("<div class='side-logo'>Nutri<span>Sync</span></div>", unsafe_allow_html=True)
 st.sidebar.markdown(f"<div class='side-sub'>{st.session_state.role} • {st.session_state.nome}</div>", unsafe_allow_html=True)
 
 if st.session_state.role == "Nutricionista":
-    st.session_state.selected_patient = st.sidebar.selectbox("Paciente ativo", patient_names(), index=patient_names().index(st.session_state.selected_patient) if st.session_state.selected_patient in patient_names() else 0)
+    st.session_state.selected_patient = st.sidebar.selectbox(
+        "Paciente ativo",
+        patient_names(),
+        index=patient_names().index(st.session_state.selected_patient) if st.session_state.selected_patient in patient_names() else 0
+    )
     ensure_patient(st.session_state.selected_patient)
 
-pages = ["Dashboard", "Minha dieta", "Registrar consumo", "Água", "Evolução", "Perfil"] if st.session_state.role == "Paciente" else ["Dashboard", "Pacientes", "Plano alimentar", "Banco de alimentos", "Calculadora clínica", "Relatórios", "Configurações"]
+pages = (
+    ["Dashboard", "Minha dieta", "Registrar consumo", "Água", "Fotos", "Chat", "Check-in", "Evolução", "Perfil"]
+    if st.session_state.role == "Paciente"
+    else ["Dashboard", "Pacientes", "Plano alimentar", "Banco de alimentos", "Chat", "Fotos", "Relatório semanal", "Calculadora clínica", "Configurações"]
+)
+
 for p in pages:
     nav_button(p, p)
 
@@ -503,21 +465,38 @@ daily = st.session_state.daily_by_patient[pname]
 imc, tmb, gasto, meta_cal, meta_prot, meta_fat, meta_carb, meta_agua = targets(pname)
 page = st.session_state.page
 
-# Paciente e dashboard compartilhado
+# =========================
+# NOTIFICAÇÕES IN-APP
+# =========================
+if st.session_state.notification_settings.get("water", True) and page != "Água":
+    if daily["water"] < meta_agua * 0.5:
+        st.toast("Lembrete: hidratação abaixo da metade da meta de hoje.")
+if st.session_state.notification_settings.get("meal", True) and page != "Minha dieta":
+    if daily["cal"] == 0:
+        st.toast("Lembrete: registre sua primeira refeição do dia.")
+
+# =========================
+# PÁGINAS COMPARTILHADAS
+# =========================
 if page == "Dashboard":
-    title = "Dashboard do paciente" if st.session_state.role == "Paciente" else f"Dashboard do nutricionista"
-    subtitle = f"Acompanhamento atual de {pname}."
-    hero(title, subtitle)
+    title = "Dashboard do paciente" if st.session_state.role == "Paciente" else "Dashboard do nutricionista"
+    hero(title, f"Acompanhamento atual de {pname}.")
     adesao = round((pct(daily["cal"], meta_cal) + pct(daily["prot"], meta_prot) + pct(daily["water"], meta_agua)) / 3 * 100)
     c1, c2, c3, c4 = st.columns(4)
     with c1: kpi("Calorias", f"{daily['cal']} kcal", f"Meta {int(meta_cal)} kcal")
     with c2: kpi("Proteína", f"{daily['prot']}g", f"Meta {int(meta_prot)}g")
     with c3: kpi("Água", f"{daily['water']}ml", f"Meta {int(meta_agua)}ml")
-    with c4: kpi("Adesão", f"{adesao}%", "média do dia")
+    with c4: kpi("Sequência", f"{streak(pname)} dias", "check-in diário")
     left, right = st.columns([1.15, .85], gap="large")
     with left:
         st.markdown("<div class='card-title'>Progresso de hoje</div>", unsafe_allow_html=True)
-        for label, value, target, suffix in [("Calorias", daily["cal"], meta_cal, "kcal"), ("Proteína", daily["prot"], meta_prot, "g"), ("Carboidrato", daily["carb"], meta_carb, "g"), ("Gordura", daily["fat"], meta_fat, "g"), ("Água", daily["water"], meta_agua, "ml")]:
+        for label, value, target, suffix in [
+            ("Calorias", daily["cal"], meta_cal, "kcal"),
+            ("Proteína", daily["prot"], meta_prot, "g"),
+            ("Carboidrato", daily["carb"], meta_carb, "g"),
+            ("Gordura", daily["fat"], meta_fat, "g"),
+            ("Água", daily["water"], meta_agua, "ml"),
+        ]:
             st.write(label)
             st.progress(pct(value, target))
             st.caption(f"{int(value)} / {int(target)} {suffix}")
@@ -550,20 +529,6 @@ elif page == "Minha dieta":
         selected = st.multiselect(f"Selecione o que comeu no {meal_name.lower()}", meal["opcoes"], key=f"select_{pname}_{meal_name}")
         total = sum_foods(selected)
         st.caption(f"Selecionado: {total['cal']} kcal • {total['prot']}g proteína • {total['carb']}g carbo • {total['fat']}g gordura")
-        if selected:
-            for item in selected:
-                f = food_by_name(item)
-                if f:
-                    st.markdown(f"""
-                    <div class="option-card">
-                        <div class="option-name">{f['nome']}</div>
-                        <div class="muted">{f['porcao']} • {f['grupo']}</div>
-                        <span class="badge">{f['cal']} kcal</span>
-                        <span class="badge">{f['prot']}g proteína</span>
-                        <span class="badge">{f['carb']}g carbo</span>
-                        <span class="badge">{f['fat']}g gordura</span>
-                    </div>
-                    """, unsafe_allow_html=True)
         if st.button("Adicionar ao dia", key=f"add_{pname}_{meal_name}", use_container_width=True):
             for k in total:
                 daily[k] += total[k]
@@ -605,6 +570,65 @@ elif page == "Água":
         if st.session_state.water_by_patient[pname]:
             st.dataframe(pd.DataFrame(st.session_state.water_by_patient[pname]), hide_index=True, use_container_width=True)
 
+elif page == "Fotos":
+    hero("Fotos das refeições", f"Envio e acompanhamento de fotos de {pname}.")
+    if st.session_state.role == "Paciente":
+        refeicao = st.selectbox("Refeição", list(st.session_state.plans[pname].keys()))
+        obs = st.text_area("Observação da foto")
+        img = st.file_uploader("Enviar foto da refeição", type=["png", "jpg", "jpeg"])
+        if img and st.button("Salvar foto", use_container_width=True):
+            ext = img.name.split(".")[-1]
+            filename = f"{pname.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+            file_path = UPLOAD_DIR / filename
+            file_path.write_bytes(img.getbuffer())
+            st.session_state.photos_by_patient[pname].append({
+                "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                "refeicao": refeicao,
+                "obs": obs,
+                "arquivo": str(file_path)
+            })
+            save_data()
+            st.success("Foto salva.")
+    photos = st.session_state.photos_by_patient[pname]
+    if photos:
+        for ph in reversed(photos):
+            st.markdown(f"**{ph['refeicao']}** — {ph['data']}")
+            st.caption(ph.get("obs", ""))
+            if Path(ph["arquivo"]).exists():
+                st.image(ph["arquivo"], use_container_width=True)
+            st.write("---")
+    else:
+        st.info("Nenhuma foto enviada ainda.")
+
+elif page == "Chat":
+    hero("Chat", f"Conversa entre paciente e nutricionista: {pname}.")
+    messages = st.session_state.chat_by_patient[pname]
+    st.markdown("<div class='chat-box'>", unsafe_allow_html=True)
+    for m in messages[-30:]:
+        cls = "chat-patient" if m["from"] == "Paciente" else "chat-nutri"
+        st.markdown(f"<div class='chat-msg {cls}'><b>{m['from']}</b><br>{m['text']}<br><span class='muted'>{m['time']}</span></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    msg = st.text_area("Mensagem")
+    sender = "Paciente" if st.session_state.role == "Paciente" else "Nutricionista"
+    if st.button("Enviar mensagem", use_container_width=True):
+        if msg.strip():
+            messages.append({"from": sender, "text": msg.strip(), "time": datetime.now().strftime("%d/%m %H:%M")})
+            save_data()
+            st.rerun()
+
+elif page == "Check-in":
+    hero("Check-in diário", "Marque presença para manter sua sequência.")
+    today = date.today().isoformat()
+    checked = today in st.session_state.checkins_by_patient[pname]
+    kpi("Sequência atual", f"{streak(pname)} dias", "dias consecutivos")
+    if checked:
+        st.markdown("<div class='ok-box'>Check-in de hoje já realizado.</div>", unsafe_allow_html=True)
+    else:
+        if st.button("Fazer check-in de hoje", use_container_width=True):
+            st.session_state.checkins_by_patient[pname].append(today)
+            save_data()
+            st.success("Check-in realizado.")
+
 elif page == "Evolução":
     hero("Evolução", f"Histórico de {pname}.")
     hist = st.session_state.history_by_patient[pname]
@@ -613,6 +637,8 @@ elif page == "Evolução":
         st.dataframe(df, hide_index=True, use_container_width=True)
         if "peso" in df:
             st.line_chart(df[["peso"]])
+        if "cal" in df:
+            st.bar_chart(df[["cal", "prot", "water"]])
     else:
         st.info("Sem histórico ainda. Salve o dia no Perfil.")
 
@@ -629,11 +655,17 @@ elif page == "Perfil":
         prof["atividade"] = st.selectbox("Atividade", ["Sedentário", "Leve", "Moderado", "Intenso"], index=["Sedentário","Leve","Moderado","Intenso"].index(prof["atividade"]))
         prof["objetivo"] = st.selectbox("Objetivo", ["Emagrecer", "Manter", "Ganhar massa"], index=["Emagrecer","Manter","Ganhar massa"].index(prof["objetivo"]))
     if st.button("Salvar perfil e fechar dia", use_container_width=True):
-        st.session_state.history_by_patient[pname].append({"data": datetime.now().strftime("%d/%m/%Y"), "peso": prof["peso"], **daily})
+        st.session_state.history_by_patient[pname].append({
+            "data": datetime.now().strftime("%d/%m/%Y"),
+            "peso": prof["peso"],
+            **daily
+        })
         save_data()
         st.success("Perfil salvo e dia adicionado ao histórico.")
 
-# Páginas do nutricionista
+# =========================
+# NUTRICIONISTA ONLY
+# =========================
 elif page == "Pacientes":
     hero("Pacientes", "Cadastre e acompanhe pacientes.")
     with st.expander("Adicionar paciente"):
@@ -703,6 +735,35 @@ elif page == "Banco de alimentos":
                 st.success("Alimento cadastrado.")
     st.dataframe(pd.DataFrame(st.session_state.foods), use_container_width=True, hide_index=True)
 
+elif page == "Relatório semanal":
+    hero("Relatório semanal", f"Resumo automático de {pname}.")
+    hist = st.session_state.history_by_patient[pname]
+    d = st.session_state.daily_by_patient[pname]
+    checks = len(st.session_state.checkins_by_patient[pname])
+    photos = len(st.session_state.photos_by_patient[pname])
+    chats = len(st.session_state.chat_by_patient[pname])
+    avg_weight = "-"
+    if hist:
+        weights = [float(h.get("peso", 0)) for h in hist if h.get("peso")]
+        avg_weight = round(sum(weights)/len(weights), 1) if weights else "-"
+    report = f"""
+Paciente: {pname}
+
+Resumo atual:
+- Calorias hoje: {d['cal']} kcal
+- Proteína hoje: {d['prot']}g
+- Água hoje: {d['water']}ml
+- Check-ins registrados: {checks}
+- Fotos de refeições enviadas: {photos}
+- Mensagens no chat: {chats}
+- Peso médio registrado: {avg_weight}
+
+Análise:
+O paciente deve manter o registro diário de refeições e água. Se a proteína ficar abaixo da meta por mais de 2 dias, revisar café da manhã e lanche. Se a hidratação estiver baixa, reforçar lembretes de água ao longo do dia.
+"""
+    st.text_area("Relatório gerado", value=report, height=320)
+    st.download_button("Baixar relatório em TXT", report, file_name=f"relatorio_{pname.replace(' ', '_')}.txt", use_container_width=True)
+
 elif page == "Calculadora clínica":
     hero("Calculadora clínica", f"Metas de {pname}.")
     prof = st.session_state.profile_by_patient[pname]
@@ -730,27 +791,15 @@ elif page == "Calculadora clínica":
             kpi("Meta calórica", f"{int(meta2)}", "kcal/dia")
             kpi("Água", f"{int(agua2)}ml", "estimativa diária")
 
-elif page == "Relatórios":
-    hero("Relatórios", f"Resumo atual de {pname}.")
-    d = st.session_state.daily_by_patient[pname]
-    st.markdown(f"""
-    <div class="card">
-        <div class="card-title">Resumo atual</div>
-        <p><b>Paciente:</b> {pname}</p>
-        <p><b>Calorias hoje:</b> {d['cal']} kcal</p>
-        <p><b>Proteína hoje:</b> {d['prot']}g</p>
-        <p><b>Água hoje:</b> {d['water']}ml</p>
-        <div class="ok-box">Sugestão: revisar proteína se ficar abaixo da meta por mais de 2 dias.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
 elif page == "Configurações":
-    hero("Configurações", "Gerencie dados locais.")
+    hero("Configurações", "Gerencie dados locais e notificações.")
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("Salvar dados locais", use_container_width=True):
+        st.session_state.notification_settings["water"] = st.checkbox("Lembretes de água", value=st.session_state.notification_settings.get("water", True))
+        st.session_state.notification_settings["meal"] = st.checkbox("Lembretes de refeição", value=st.session_state.notification_settings.get("meal", True))
+        if st.button("Salvar configurações", use_container_width=True):
             save_data()
-            st.success("Dados salvos.")
+            st.success("Configurações salvas.")
     with c2:
         if st.button("Zerar consumo do paciente ativo", use_container_width=True):
             st.session_state.daily_by_patient[pname] = {"cal": 0, "prot": 0, "carb": 0, "fat": 0, "water": 0}
