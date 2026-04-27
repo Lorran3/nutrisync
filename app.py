@@ -2,205 +2,211 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="NutriSync", page_icon="🥗", layout="wide")
+st.set_page_config(page_title="NutriSync", page_icon="NS", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-    --bg: #f3f7f2;
-    --dark: #103b2c;
-    --dark2: #0b2b20;
-    --green: #24a66a;
-    --green2: #188653;
-    --soft: #e8f7ef;
+    --bg: #f5f8f4;
+    --dark: #12372a;
+    --dark2: #0d2b21;
+    --green: #1f8f5f;
+    --green2: #176f49;
+    --soft: #eaf7ef;
     --text: #13231c;
-    --muted: #718078;
-    --line: #dfe9e2;
+    --muted: #6f7d75;
+    --line: #dfe8e1;
     --white: #ffffff;
 }
 
 * { font-family: 'Inter', sans-serif !important; }
 
 .stApp {
-    background:
-        radial-gradient(circle at top left, rgba(36,166,106,.12), transparent 32%),
-        linear-gradient(180deg, #f7faf5 0%, #edf5ed 100%);
+    background: linear-gradient(180deg, #f7faf5 0%, #eef5ee 100%);
     color: var(--text);
 }
 
-/* remove cara padrão */
 header[data-testid="stHeader"] { background: transparent; }
-[data-testid="stToolbar"] { display: none; }
-.block-container { padding-top: 1.7rem; padding-bottom: 3rem; }
+/* toolbar kept visible so the sidebar open/close button appears */
+.block-container { padding-top: 1.6rem; padding-bottom: 3rem; }
 
-/* Sidebar */
+/* SIDEBAR */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #123b2d 0%, #09261d 100%);
+    background: linear-gradient(180deg, #12372a 0%, #0b271e 100%);
     border-right: 1px solid rgba(255,255,255,.08);
 }
-
-[data-testid="stSidebar"] > div:first-child {
-    padding-top: 28px;
-}
+[data-testid="stSidebar"] > div:first-child { padding-top: 28px; }
 
 .side-logo {
     color: white;
-    font-size: 31px;
+    font-size: 30px;
     font-weight: 900;
     letter-spacing: -.9px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
-.side-logo span { color: #7df0ae; }
+.side-logo span { color: #83e6ad; }
 .side-sub {
-    color: #a7f3d0;
+    color: #b7e8ca;
     font-size: 13px;
-    margin-bottom: 22px;
+    margin-bottom: 24px;
 }
 
-/* Botões de navegação em caixa */
+/* Menu em caixas */
 .nav-btn button {
     width: 100%;
     justify-content: flex-start;
     text-align: left;
-    border-radius: 16px !important;
+    border-radius: 15px !important;
     padding: 13px 15px !important;
-    margin: 2px 0 !important;
+    margin: 3px 0 !important;
     background: rgba(255,255,255,.07) !important;
     color: #ecfdf5 !important;
     border: 1px solid rgba(255,255,255,.08) !important;
-    font-weight: 800 !important;
+    font-weight: 750 !important;
     box-shadow: none !important;
 }
-
 .nav-btn button:hover {
-    background: rgba(125,240,174,.18) !important;
+    background: rgba(131,230,173,.17) !important;
     color: white !important;
 }
-
 .nav-active {
-    background: linear-gradient(135deg, #24a66a, #13834e);
+    background: #1f8f5f;
     color: white;
-    border-radius: 16px;
+    border-radius: 15px;
     padding: 13px 15px;
-    margin: 6px 0;
-    font-weight: 900;
-    box-shadow: 0 12px 24px rgba(36,166,106,.26);
+    margin: 7px 0;
+    font-weight: 850;
+    box-shadow: 0 12px 24px rgba(31,143,95,.24);
 }
 
-/* Corrige campos brancos/letras invisíveis */
-input, textarea, select {
+/* Corrige campos, selects e barras brancas */
+input, textarea, select,
+[data-baseweb="input"],
+[data-baseweb="textarea"],
+[data-baseweb="select"] > div {
     color: #13231c !important;
-    background: #ffffff !important;
-    border: 1px solid #dbe7df !important;
+    background-color: #ffffff !important;
+    border-color: #dbe7df !important;
     border-radius: 14px !important;
 }
 
 [data-baseweb="input"] input,
 [data-baseweb="textarea"] textarea,
-[data-baseweb="select"] div {
+[data-baseweb="select"] div,
+[data-baseweb="select"] span,
+[data-baseweb="popover"] div,
+[data-baseweb="menu"] div {
     color: #13231c !important;
     background-color: #ffffff !important;
 }
 
-[data-baseweb="select"] span {
-    color: #13231c !important;
+[data-baseweb="popover"] {
+    background-color: #ffffff !important;
 }
 
-label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea label {
+label, .stTextInput label, .stNumberInput label, .stSelectbox label,
+.stTextArea label, .stMultiSelect label, .stSlider label {
     color: #263d32 !important;
     font-weight: 800 !important;
 }
 
-.stMarkdown, p, span, div {
-    color: inherit;
+/* Some Streamlit white strips */
+div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"] {
+    background: transparent !important;
 }
 
-/* Cards */
+.stSelectbox div, .stMultiSelect div {
+    color: #13231c !important;
+}
+
+/* HERO E CARDS */
 .hero {
-    background: linear-gradient(135deg, #143d2e 0%, #1e8d58 100%);
+    background: linear-gradient(135deg, #12372a 0%, #1f8f5f 100%);
     color: white;
-    border-radius: 32px;
-    padding: 28px;
-    box-shadow: 0 24px 60px rgba(16,59,44,.22);
-    min-height: 170px;
+    border-radius: 30px;
+    padding: 30px;
+    box-shadow: 0 22px 55px rgba(18,55,42,.20);
+    min-height: 160px;
     position: relative;
     overflow: hidden;
 }
 .hero:after {
     content: "";
     position: absolute;
-    width: 230px;
-    height: 230px;
+    width: 240px;
+    height: 240px;
     border-radius: 999px;
-    right: -55px;
-    top: -75px;
-    background: rgba(255,255,255,.11);
+    right: -70px;
+    top: -90px;
+    background: rgba(255,255,255,.10);
 }
 .hero h1 {
     color: white;
     margin: 0;
-    font-size: 36px;
+    font-size: 34px;
     font-weight: 900;
     letter-spacing: -1px;
 }
 .hero p {
-    color: rgba(255,255,255,.83);
+    color: rgba(255,255,255,.84);
     font-weight: 600;
-    max-width: 680px;
+    max-width: 760px;
 }
 
 .card {
-    background: rgba(255,255,255,.92);
-    border: 1px solid rgba(223,233,226,.95);
-    border-radius: 28px;
+    background: rgba(255,255,255,.96);
+    border: 1px solid #dfe8e1;
+    border-radius: 26px;
     padding: 22px;
-    box-shadow: 0 18px 45px rgba(16,59,44,.08);
-    min-height: 128px;
+    box-shadow: 0 16px 40px rgba(18,55,42,.075);
+    min-height: 126px;
 }
 
 .card-title {
-    color: #123b2d;
+    color: #12372a;
     font-size: 20px;
     font-weight: 900;
     margin-bottom: 6px;
 }
 
 .muted {
-    color: #718078;
+    color: #6f7d75;
     font-size: 14px;
     font-weight: 600;
 }
 
 .kpi-label {
-    color: #718078;
-    font-size: 13px;
-    font-weight: 800;
+    color: #6f7d75;
+    font-size: 12px;
+    font-weight: 850;
     text-transform: uppercase;
-    letter-spacing: .4px;
+    letter-spacing: .45px;
 }
 .kpi-value {
-    color: #123b2d;
-    font-size: 34px;
+    color: #12372a;
+    font-size: 32px;
     font-weight: 900;
     letter-spacing: -.8px;
     margin-top: 7px;
 }
 .kpi-foot {
-    color: #24a66a;
+    color: #1f8f5f;
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 850;
     margin-top: 8px;
 }
 
 .meal {
     background: white;
-    border: 1px solid #dfe9e2;
+    border: 1px solid #dfe8e1;
     border-radius: 22px;
     padding: 18px;
     margin: 12px 0;
-    box-shadow: 0 10px 25px rgba(16,59,44,.05);
+    box-shadow: 0 10px 25px rgba(18,55,42,.05);
 }
 .meal-head {
     display: flex;
@@ -209,13 +215,13 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea
     align-items: start;
 }
 .meal-title {
-    color: #123b2d;
+    color: #12372a;
     font-weight: 900;
     font-size: 18px;
 }
 .meal-time {
-    background: #e8f7ef;
-    color: #188653;
+    background: #eaf7ef;
+    color: #176f49;
     padding: 7px 10px;
     border-radius: 999px;
     font-size: 12px;
@@ -224,7 +230,7 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea
 .badge {
     display: inline-block;
     background: #eef8f2;
-    color: #188653;
+    color: #176f49;
     border: 1px solid #cdeedb;
     border-radius: 999px;
     padding: 6px 10px;
@@ -232,11 +238,22 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea
     font-size: 12px;
     font-weight: 900;
 }
+.option-card {
+    background: #fbfdfb;
+    border: 1px solid #dfe8e1;
+    border-radius: 18px;
+    padding: 14px;
+    margin: 10px 0;
+}
+.option-name {
+    font-weight: 900;
+    color: #12372a;
+}
 .ok-box {
-    background: #e8f7ef;
+    background: #eaf7ef;
     color: #166534;
     border: 1px solid #bce7cc;
-    border-radius: 18px;
+    border-radius: 17px;
     padding: 14px 16px;
     font-weight: 800;
     margin: 9px 0;
@@ -245,7 +262,7 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea
     background: #fff7ed;
     color: #9a3412;
     border: 1px solid #fed7aa;
-    border-radius: 18px;
+    border-radius: 17px;
     padding: 14px 16px;
     font-weight: 800;
     margin: 9px 0;
@@ -254,62 +271,78 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea
     background: #fef2f2;
     color: #991b1b;
     border: 1px solid #fecaca;
-    border-radius: 18px;
+    border-radius: 17px;
     padding: 14px 16px;
     font-weight: 800;
     margin: 9px 0;
 }
 
 .stButton > button {
-    border-radius: 15px !important;
+    border-radius: 14px !important;
     border: none !important;
-    background: linear-gradient(135deg, #24a66a, #168650) !important;
+    background: #1f8f5f !important;
     color: white !important;
-    font-weight: 900 !important;
+    font-weight: 850 !important;
     padding: 12px 18px !important;
-    box-shadow: 0 12px 24px rgba(36,166,106,.2) !important;
+    box-shadow: 0 10px 22px rgba(31,143,95,.18) !important;
 }
-
 .stButton > button:hover {
-    transform: translateY(-1px);
-    background: linear-gradient(135deg, #1f965e, #126f43) !important;
+    background: #176f49 !important;
     color: white !important;
 }
 
-/* Dataframe */
-[data-testid="stDataFrame"] {
-    border-radius: 20px;
-    overflow: hidden;
-}
-
-/* Métricas padrão */
 [data-testid="stMetric"] {
     background: white;
-    border: 1px solid #dfe9e2;
+    border: 1px solid #dfe8e1;
     border-radius: 24px;
     padding: 20px;
-    box-shadow: 0 16px 38px rgba(16,59,44,.07);
+    box-shadow: 0 14px 34px rgba(18,55,42,.07);
 }
 [data-testid="stMetricLabel"] * {
-    color: #718078 !important;
+    color: #6f7d75 !important;
     font-weight: 800 !important;
 }
 [data-testid="stMetricValue"] {
-    color: #123b2d !important;
+    color: #12372a !important;
     font-weight: 900 !important;
 }
 
-/* Radio escondido não usado */
-.stRadio { display: none; }
+.stProgress > div > div > div > div {
+    background-color: #1f8f5f !important;
+}
 
-hr { border: none; border-top: 1px solid #dfe9e2; margin: 20px 0; }
+hr { border: none; border-top: 1px solid #dfe8e1; margin: 20px 0; }
 
 @media(max-width: 800px) {
-    .hero h1 { font-size: 29px; }
+    .hero h1 { font-size: 28px; }
     .block-container { padding-left: 1rem; padding-right: 1rem; }
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ---------------- DADOS BASE ----------------
+FOODS = [
+    {"nome": "Pão francês", "grupo": "Carboidrato", "porcao": "1 unidade", "cal": 135, "prot": 4, "carb": 28, "fat": 1},
+    {"nome": "Pão integral", "grupo": "Carboidrato", "porcao": "2 fatias", "cal": 130, "prot": 6, "carb": 24, "fat": 2},
+    {"nome": "Tapioca", "grupo": "Carboidrato", "porcao": "2 colheres", "cal": 140, "prot": 0, "carb": 34, "fat": 0},
+    {"nome": "Aveia", "grupo": "Carboidrato", "porcao": "30g", "cal": 115, "prot": 4, "carb": 20, "fat": 2},
+    {"nome": "Cuscuz", "grupo": "Carboidrato", "porcao": "100g", "cal": 112, "prot": 3, "carb": 25, "fat": 1},
+    {"nome": "Arroz branco", "grupo": "Carboidrato", "porcao": "100g", "cal": 130, "prot": 3, "carb": 28, "fat": 0},
+    {"nome": "Batata doce", "grupo": "Carboidrato", "porcao": "100g", "cal": 86, "prot": 2, "carb": 20, "fat": 0},
+    {"nome": "Banana", "grupo": "Fruta", "porcao": "1 unidade", "cal": 90, "prot": 1, "carb": 23, "fat": 0},
+    {"nome": "Maçã", "grupo": "Fruta", "porcao": "1 unidade", "cal": 70, "prot": 0, "carb": 19, "fat": 0},
+    {"nome": "Ovo", "grupo": "Proteína", "porcao": "2 unidades", "cal": 140, "prot": 12, "carb": 1, "fat": 10},
+    {"nome": "Frango grelhado", "grupo": "Proteína", "porcao": "100g", "cal": 165, "prot": 31, "carb": 0, "fat": 4},
+    {"nome": "Carne magra", "grupo": "Proteína", "porcao": "100g", "cal": 210, "prot": 28, "carb": 0, "fat": 10},
+    {"nome": "Peixe", "grupo": "Proteína", "porcao": "100g", "cal": 150, "prot": 26, "carb": 0, "fat": 5},
+    {"nome": "Iogurte natural", "grupo": "Proteína", "porcao": "170g", "cal": 110, "prot": 9, "carb": 12, "fat": 3},
+    {"nome": "Whey protein", "grupo": "Proteína", "porcao": "1 scoop", "cal": 120, "prot": 24, "carb": 3, "fat": 2},
+    {"nome": "Feijão", "grupo": "Leguminosa", "porcao": "1 concha", "cal": 95, "prot": 6, "carb": 17, "fat": 1},
+    {"nome": "Salada", "grupo": "Vegetal", "porcao": "à vontade", "cal": 35, "prot": 2, "carb": 7, "fat": 0},
+    {"nome": "Legumes", "grupo": "Vegetal", "porcao": "100g", "cal": 55, "prot": 2, "carb": 11, "fat": 0},
+    {"nome": "Azeite", "grupo": "Gordura", "porcao": "1 colher chá", "cal": 45, "prot": 0, "carb": 0, "fat": 5},
+    {"nome": "Pasta de amendoim", "grupo": "Gordura", "porcao": "1 colher", "cal": 95, "prot": 4, "carb": 3, "fat": 8},
+]
 
 # ---------------- STATE ----------------
 if "logged" not in st.session_state:
@@ -322,19 +355,49 @@ if "nome" not in st.session_state:
     st.session_state.nome = "Lorran Ribeiro"
 if "daily" not in st.session_state:
     st.session_state.daily = {"cal": 0, "prot": 0, "carb": 0, "fat": 0, "water": 0}
-if "meals" not in st.session_state:
-    st.session_state.meals = [
-        {"refeicao": "Café da manhã", "hora": "07:30", "alimentos": "Ovos mexidos, pão integral, banana e café sem açúcar", "cal": 450, "prot": 28, "carb": 48, "fat": 16},
-        {"refeicao": "Almoço", "hora": "12:30", "alimentos": "Arroz, feijão, frango grelhado, legumes e salada", "cal": 720, "prot": 48, "carb": 82, "fat": 18},
-        {"refeicao": "Lanche", "hora": "16:00", "alimentos": "Iogurte natural, aveia e fruta", "cal": 310, "prot": 22, "carb": 42, "fat": 7},
-        {"refeicao": "Jantar", "hora": "20:00", "alimentos": "Carne magra, batata doce, legumes e salada", "cal": 590, "prot": 44, "carb": 55, "fat": 19},
-    ]
+if "water_log" not in st.session_state:
+    st.session_state.water_log = []
+if "allowed_meals" not in st.session_state:
+    st.session_state.allowed_meals = {
+        "Café da manhã": {
+            "hora": "07:30",
+            "orientacao": "Escolha 1 carboidrato, 1 proteína e 1 fruta.",
+            "opcoes": ["Pão francês", "Pão integral", "Tapioca", "Cuscuz", "Ovo", "Iogurte natural", "Banana", "Maçã"]
+        },
+        "Almoço": {
+            "hora": "12:30",
+            "orientacao": "Base com carboidrato, proteína, feijão e vegetais.",
+            "opcoes": ["Arroz branco", "Feijão", "Frango grelhado", "Carne magra", "Peixe", "Salada", "Legumes", "Azeite"]
+        },
+        "Lanche": {
+            "hora": "16:00",
+            "orientacao": "Escolha uma opção proteica e uma fruta/carboidrato.",
+            "opcoes": ["Iogurte natural", "Whey protein", "Aveia", "Banana", "Maçã", "Pão integral"]
+        },
+        "Jantar": {
+            "hora": "20:00",
+            "orientacao": "Refeição leve com proteína, vegetais e carboidrato se necessário.",
+            "opcoes": ["Frango grelhado", "Carne magra", "Peixe", "Batata doce", "Salada", "Legumes", "Azeite"]
+        }
+    }
 if "patients" not in st.session_state:
     st.session_state.patients = [
         {"Paciente": "Lorran Ribeiro", "Objetivo": "Emagrecimento", "Adesão": "84%", "Peso": "80.0 kg", "Status": "Em dia"},
         {"Paciente": "Paciente Demo", "Objetivo": "Hipertrofia", "Adesão": "71%", "Peso": "72.5 kg", "Status": "Atenção"},
         {"Paciente": "Paciente Teste", "Objetivo": "Manutenção", "Adesão": "93%", "Peso": "64.2 kg", "Status": "Excelente"},
     ]
+
+def food_by_name(name):
+    return next((f for f in FOODS if f["nome"] == name), None)
+
+def sum_foods(names):
+    total = {"cal": 0, "prot": 0, "carb": 0, "fat": 0}
+    for name in names:
+        f = food_by_name(name)
+        if f:
+            for k in total:
+                total[k] += f[k]
+    return total
 
 def calc_clinica(peso, altura, idade, sexo, atividade, objetivo):
     altura_m = altura / 100
@@ -385,17 +448,19 @@ if not st.session_state.logged:
     c1, c2 = st.columns([1.25, .75], gap="large")
     with c1:
         st.markdown("""
-        <div class="hero" style="min-height:560px;padding:42px;">
+        <div class="hero" style="min-height:540px;padding:42px;">
             <h1 style="font-size:48px;">NutriSync</h1>
-            <p style="font-size:19px;max-width:760px;">Controle nutricional com plano alimentar, registro diário, metas, cálculo clínico e acompanhamento visual.</p>
+            <p style="font-size:19px;max-width:760px;">
+                Plataforma limpa para organizar dieta, metas, alimentos permitidos, água, macros e acompanhamento.
+            </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px;">
                 <div style="background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:22px;">
                     <b style="font-size:18px;color:white;">Paciente</b><br>
-                    <span style="color:rgba(255,255,255,.82);">Acessa dieta, marca refeições e acompanha calorias, proteína e água.</span>
+                    <span style="color:rgba(255,255,255,.82);">Vê as opções liberadas, seleciona o que comeu e registra água.</span>
                 </div>
                 <div style="background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:22px;">
                     <b style="font-size:18px;color:white;">Nutricionista</b><br>
-                    <span style="color:rgba(255,255,255,.82);">Cria planos, calcula metas e acompanha pacientes em um painel limpo.</span>
+                    <span style="color:rgba(255,255,255,.82);">Seleciona alimentos permitidos por refeição e calcula metas clínicas.</span>
                 </div>
             </div>
         </div>
@@ -403,8 +468,8 @@ if not st.session_state.logged:
     with c2:
         st.markdown("<div class='card' style='margin-top:52px;'>", unsafe_allow_html=True)
         st.subheader("Entrar")
-        st.caption("Ambiente demo")
-        role = st.selectbox("Escolha seu perfil", ["Paciente", "Nutricionista"])
+        st.caption("Ambiente demonstrativo")
+        role = st.selectbox("Perfil", ["Paciente", "Nutricionista"])
         nome = st.text_input("Nome", value="Lorran Ribeiro")
         senha = st.text_input("Senha", value="demo", type="password")
         if st.button("Acessar painel", use_container_width=True):
@@ -422,31 +487,31 @@ st.sidebar.markdown(f"<div class='side-sub'>{st.session_state.role} • {st.sess
 
 if st.session_state.role == "Paciente":
     pages = [
-        ("📊 Dashboard", "Dashboard"),
-        ("🍽️ Minha dieta", "Minha dieta"),
-        ("✅ Registrar dia", "Registrar dia"),
-        ("📈 Evolução", "Evolução"),
-        ("💬 Assistente", "Assistente"),
+        ("Dashboard", "Dashboard"),
+        ("Minha dieta", "Minha dieta"),
+        ("Registrar consumo", "Registrar consumo"),
+        ("Água", "Água"),
+        ("Evolução", "Evolução"),
+        ("Assistente", "Assistente"),
     ]
 else:
     pages = [
-        ("📊 Dashboard", "Dashboard"),
-        ("👥 Pacientes", "Pacientes"),
-        ("🍽️ Criar dieta", "Criar dieta"),
-        ("🧮 Calculadora", "Calculadora clínica"),
-        ("📄 Relatórios", "Relatórios"),
+        ("Dashboard", "Dashboard"),
+        ("Pacientes", "Pacientes"),
+        ("Plano alimentar", "Plano alimentar"),
+        ("Banco de alimentos", "Banco de alimentos"),
+        ("Calculadora clínica", "Calculadora clínica"),
+        ("Relatórios", "Relatórios"),
     ]
 
 for label, page in pages:
     nav_button(label, page)
 
 st.sidebar.write("")
-st.sidebar.write("")
 if st.sidebar.button("Sair", use_container_width=True):
     st.session_state.logged = False
     st.rerun()
 
-# metas demo
 imc, tmb, gasto, meta_cal, meta_prot, meta_fat, meta_carb, meta_agua = calc_clinica(80, 180, 25, "Masculino", 1.55, "Emagrecer")
 page = st.session_state.page
 
@@ -454,7 +519,7 @@ page = st.session_state.page
 if st.session_state.role == "Paciente":
 
     if page == "Dashboard":
-        hero("Dashboard do Paciente", "Resumo claro do dia, metas principais e próximos passos.")
+        hero("Dashboard do paciente", "Resumo do dia, metas principais e próximos passos.")
         d = st.session_state.daily
         adesao = round((pct(d["cal"], meta_cal) + pct(d["prot"], meta_prot) + pct(d["water"], meta_agua)) / 3 * 100)
 
@@ -481,11 +546,11 @@ if st.session_state.role == "Paciente":
 
         with right:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.markdown("<div class='card-title'>Feedback inteligente</div>", unsafe_allow_html=True)
+            st.markdown("<div class='card-title'>Feedback</div>", unsafe_allow_html=True)
             if d["prot"] < meta_prot:
                 st.markdown(f"<div class='warn-box'>Faltam {int(meta_prot - d['prot'])}g de proteína hoje.</div>", unsafe_allow_html=True)
             else:
-                st.markdown("<div class='ok-box'>Proteína batida. Excelente.</div>", unsafe_allow_html=True)
+                st.markdown("<div class='ok-box'>Proteína batida.</div>", unsafe_allow_html=True)
             if d["cal"] > meta_cal:
                 st.markdown(f"<div class='danger-box'>Você passou {int(d['cal'] - meta_cal)} kcal da meta.</div>", unsafe_allow_html=True)
             else:
@@ -495,43 +560,75 @@ if st.session_state.role == "Paciente":
             st.markdown("</div>", unsafe_allow_html=True)
 
     elif page == "Minha dieta":
-        hero("Minha dieta", "Plano alimentar separado por horário, com macros e registro rápido.")
-        for i, meal in enumerate(st.session_state.meals):
+        hero("Minha dieta", "Veja o que foi liberado para cada refeição e selecione o que você comeu.")
+        for meal_name, meal in st.session_state.allowed_meals.items():
             st.markdown(f"""
             <div class="meal">
                 <div class="meal-head">
                     <div>
-                        <div class="meal-title">{meal['refeicao']}</div>
-                        <div class="muted">{meal['alimentos']}</div>
+                        <div class="meal-title">{meal_name}</div>
+                        <div class="muted">{meal['orientacao']}</div>
                     </div>
                     <div class="meal-time">{meal['hora']}</div>
                 </div>
-                <span class="badge">{meal['cal']} kcal</span>
-                <span class="badge">{meal['prot']}g proteína</span>
-                <span class="badge">{meal['carb']}g carbo</span>
-                <span class="badge">{meal['fat']}g gordura</span>
             </div>
             """, unsafe_allow_html=True)
-            if st.button(f"Marcar como consumido", key=f"eat_{i}"):
-                st.session_state.daily["cal"] += meal["cal"]
-                st.session_state.daily["prot"] += meal["prot"]
-                st.session_state.daily["carb"] += meal["carb"]
-                st.session_state.daily["fat"] += meal["fat"]
-                st.success("Refeição adicionada ao dia.")
 
-    elif page == "Registrar dia":
-        hero("Registrar dia", "Atualize manualmente seu consumo de hoje.")
+            selected = st.multiselect(
+                f"Selecione o que comeu no {meal_name.lower()}",
+                meal["opcoes"],
+                key=f"patient_select_{meal_name}"
+            )
+            total = sum_foods(selected)
+            st.caption(f"Selecionado: {total['cal']} kcal • {total['prot']}g proteína • {total['carb']}g carbo • {total['fat']}g gordura")
+            if st.button(f"Adicionar {meal_name} ao dia", key=f"add_{meal_name}"):
+                st.session_state.daily["cal"] += total["cal"]
+                st.session_state.daily["prot"] += total["prot"]
+                st.session_state.daily["carb"] += total["carb"]
+                st.session_state.daily["fat"] += total["fat"]
+                st.success("Refeição registrada.")
+
+    elif page == "Registrar consumo":
+        hero("Registrar consumo", "Registre manualmente quando comer algo fora da seleção.")
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.session_state.daily["cal"] = st.number_input("Calorias consumidas", min_value=0, value=st.session_state.daily["cal"])
-            st.session_state.daily["prot"] = st.number_input("Proteína consumida (g)", min_value=0, value=st.session_state.daily["prot"])
+            cal = st.number_input("Calorias extras", min_value=0, value=0)
+            prot = st.number_input("Proteína extra (g)", min_value=0, value=0)
         with c2:
-            st.session_state.daily["carb"] = st.number_input("Carboidrato (g)", min_value=0, value=st.session_state.daily["carb"])
-            st.session_state.daily["fat"] = st.number_input("Gordura (g)", min_value=0, value=st.session_state.daily["fat"])
+            carb = st.number_input("Carboidrato extra (g)", min_value=0, value=0)
+            fat = st.number_input("Gordura extra (g)", min_value=0, value=0)
         with c3:
-            st.session_state.daily["water"] = st.number_input("Água (ml)", min_value=0, value=st.session_state.daily["water"], step=250)
-            peso = st.number_input("Peso de hoje (kg)", min_value=20.0, value=80.0)
-        st.markdown("<div class='ok-box'>Registro atualizado no painel.</div>", unsafe_allow_html=True)
+            obs = st.text_area("Observação")
+            if st.button("Adicionar consumo manual", use_container_width=True):
+                st.session_state.daily["cal"] += cal
+                st.session_state.daily["prot"] += prot
+                st.session_state.daily["carb"] += carb
+                st.session_state.daily["fat"] += fat
+                st.success("Consumo adicionado.")
+
+    elif page == "Água":
+        hero("Água", "Registre a quantidade de água bebida ao longo do dia.")
+        c1, c2 = st.columns([.8, 1.2], gap="large")
+        with c1:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            amount = st.number_input("Quantidade bebida agora (ml)", min_value=0, value=250, step=50)
+            quick = st.selectbox("Atalho", ["250 ml", "500 ml", "750 ml", "1000 ml"])
+            if st.button("Registrar água", use_container_width=True):
+                val = int(quick.split()[0]) if quick else amount
+                if amount != 250:
+                    val = amount
+                st.session_state.daily["water"] += val
+                st.session_state.water_log.append(val)
+                st.success(f"{val}ml adicionados.")
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c2:
+            kpi("Água hoje", f"{st.session_state.daily['water']}ml", f"Meta {int(meta_agua)}ml")
+            st.progress(pct(st.session_state.daily["water"], meta_agua))
+            st.write("Registros do dia")
+            if st.session_state.water_log:
+                st.dataframe(pd.DataFrame({"Registro": range(1, len(st.session_state.water_log)+1), "Água (ml)": st.session_state.water_log}), hide_index=True, use_container_width=True)
+            else:
+                st.caption("Nenhum registro de água ainda.")
 
     elif page == "Evolução":
         hero("Evolução", "Histórico visual simples para acompanhar progresso.")
@@ -548,7 +645,7 @@ if st.session_state.role == "Paciente":
             st.markdown("</div>", unsafe_allow_html=True)
 
     elif page == "Assistente":
-        hero("Assistente", "Orientações rápidas com base no seu dia.")
+        hero("Assistente", "Orientações rápidas com base no consumo do dia.")
         msg = st.text_area("Como foi sua dieta hoje?")
         if st.button("Gerar sugestão"):
             d = st.session_state.daily
@@ -563,7 +660,7 @@ if st.session_state.role == "Paciente":
 else:
 
     if page == "Dashboard":
-        hero("Dashboard do Nutricionista", "Pacientes, adesão, planos ativos e alertas em um painel limpo.")
+        hero("Dashboard do nutricionista", "Pacientes, adesão, planos ativos e alertas em um painel limpo.")
         c1, c2, c3, c4 = st.columns(4)
         with c1: kpi("Pacientes ativos", "12", "+3 este mês")
         with c2: kpi("Adesão média", "84%", "últimos 7 dias")
@@ -592,36 +689,50 @@ else:
                 st.success("Paciente cadastrado.")
         st.dataframe(st.session_state.patients, use_container_width=True, hide_index=True)
 
-    elif page == "Criar dieta":
-        hero("Criar dieta", "Monte o plano alimentar que aparecerá para o paciente.")
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        refeicao = st.text_input("Refeição", value="Café da manhã")
-        hora = st.text_input("Horário", value="07:30")
-        alimentos = st.text_area("Alimentos", value="Ovos mexidos, pão integral e banana")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: cal = st.number_input("Calorias", min_value=0, value=450)
-        with c2: prot = st.number_input("Proteína", min_value=0, value=28)
-        with c3: carb = st.number_input("Carboidrato", min_value=0, value=48)
-        with c4: fat = st.number_input("Gordura", min_value=0, value=16)
-        if st.button("Adicionar ao plano"):
-            st.session_state.meals.append({"refeicao": refeicao, "hora": hora, "alimentos": alimentos, "cal": cal, "prot": prot, "carb": carb, "fat": fat})
-            st.success("Refeição adicionada ao plano do paciente.")
-        st.markdown("</div>", unsafe_allow_html=True)
+    elif page == "Plano alimentar":
+        hero("Plano alimentar", "Selecione quais alimentos o paciente pode comer em cada refeição.")
+        meal_name = st.selectbox("Refeição", list(st.session_state.allowed_meals.keys()))
+        current = st.session_state.allowed_meals[meal_name]
 
-        st.subheader("Plano atual")
-        for meal in st.session_state.meals:
-            st.markdown(f"""
-            <div class="meal">
-                <div class="meal-head">
-                    <div><div class="meal-title">{meal['refeicao']}</div><div class="muted">{meal['alimentos']}</div></div>
-                    <div class="meal-time">{meal['hora']}</div>
-                </div>
-                <span class="badge">{meal['cal']} kcal</span>
-                <span class="badge">{meal['prot']}g proteína</span>
-                <span class="badge">{meal['carb']}g carbo</span>
-                <span class="badge">{meal['fat']}g gordura</span>
-            </div>
-            """, unsafe_allow_html=True)
+        c1, c2 = st.columns([.8, 1.2], gap="large")
+        with c1:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            hora = st.text_input("Horário", value=current["hora"])
+            orientacao = st.text_area("Orientação da refeição", value=current["orientacao"])
+            grupos = sorted(set(f["grupo"] for f in FOODS))
+            filtro = st.multiselect("Filtrar por grupo", grupos, default=grupos)
+            food_options = [f["nome"] for f in FOODS if f["grupo"] in filtro]
+            selected = st.multiselect("Alimentos permitidos", food_options, default=current["opcoes"])
+            if st.button("Salvar refeição", use_container_width=True):
+                st.session_state.allowed_meals[meal_name] = {"hora": hora, "orientacao": orientacao, "opcoes": selected}
+                st.success("Refeição atualizada.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with c2:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            st.markdown("<div class='card-title'>Prévia para o paciente</div>", unsafe_allow_html=True)
+            st.write(f"**{meal_name} • {hora}**")
+            st.caption(orientacao)
+            for item in selected:
+                f = food_by_name(item)
+                if f:
+                    st.markdown(f"""
+                    <div class="option-card">
+                        <div class="option-name">{f['nome']}</div>
+                        <div class="muted">{f['porcao']} • {f['grupo']}</div>
+                        <span class="badge">{f['cal']} kcal</span>
+                        <span class="badge">{f['prot']}g proteína</span>
+                        <span class="badge">{f['carb']}g carbo</span>
+                        <span class="badge">{f['fat']}g gordura</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    elif page == "Banco de alimentos":
+        hero("Banco de alimentos", "Lista base de alimentos para montar os planos.")
+        df = pd.DataFrame(FOODS)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.info("Nesta versão demo a lista é fixa. No próximo passo dá para adicionar cadastro de novos alimentos e salvar em banco de dados.")
 
     elif page == "Calculadora clínica":
         hero("Calculadora clínica", "IMC, TMB, gasto energético, meta calórica, macros e água.")
